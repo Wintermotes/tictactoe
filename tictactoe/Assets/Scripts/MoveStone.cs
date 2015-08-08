@@ -12,7 +12,7 @@ public class MoveStone : MonoBehaviour {
 	private GameObject subtitle; 
 	private GameObject opponent; 
 
-	
+	//TODO: Move this to char controller. Right now, you can carry multiple pieces. 
 	void OnMouseDown(){
 		Debug.Log (Input.mousePosition); 
 
@@ -25,8 +25,6 @@ public class MoveStone : MonoBehaviour {
 
 
 		carry = !carry; 
-
-
 	}
 	
 	void Update(){
@@ -39,25 +37,23 @@ public class MoveStone : MonoBehaviour {
 
 		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 		RaycastHit hit;
-		if (Physics.Raycast(ray, out hit) && carry && Input.GetMouseButtonDown(0)){
-
+		// Only perform transform, if its on a board_piece, you carry a stone, and press the mouse. 
+		if (Physics.Raycast(ray, out hit) && carry && Input.GetMouseButtonDown(0) && hit.transform.gameObject.tag == "bosard_piece"){
 			// TRANSFORMS 
-			// TODO: make it only apply transform, if its a boardpiece. 
-			Vector3 board_pos = hit.transform.gameObject.transform.position; 
-			board_pos.y = board_pos.y += 2.1f;  
-			gameObject.transform.position = board_pos;
-			carry = !carry;
+				carry = !carry;
+				Vector3 board_pos = hit.transform.gameObject.transform.position; 
+				board_pos.y = board_pos.y += 2.1f;  
+				gameObject.transform.position = board_pos;
 
-			// ANIMATION
-			opponent = GameObject.FindGameObjectWithTag ("opponent");
-			opponent.GetComponent<Animator>().SetInteger("anim_state", 1);
 
-			//TODO: Trigger animation of opponent
+				// ANIMATION
+				opponent = GameObject.FindGameObjectWithTag ("opponent");
+				opponent.GetComponent<Animator>().SetInteger("anim_state", 1);
 
-			//Trigger subtitle
-			GameObject subtitle = GameObject.FindGameObjectWithTag("subtitle"); 
-			string name = "Cube: "; 
-			subtitle.GetComponent<Text>().text = name + "Man, you are bad. Much worse than cylinder."; 
+				//Trigger subtitle
+				GameObject subtitle = GameObject.FindGameObjectWithTag("subtitle"); 
+				string name = "Cube: "; 
+				subtitle.GetComponent<Text>().text = name + "Man, you are bad. Much worse than cylinder."; 
 		}
 	}
 
