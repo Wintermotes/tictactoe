@@ -37,18 +37,30 @@ public class GameAlgorithm : MonoBehaviour {
 		foreach(Transform child in temp_gameob.transform){
 			circle_pieces.Add(child); 
 		}
+		Debug.Log("Assigning of variables done!"); 
 
 		// DEBUGGING INFO: 
-		Debug.Log("Board info: "); 
+		/*Debug.Log("Board info: "); 
 		foreach(KeyValuePair<int, Transform> board_piece in board_pieces)
 		{
 			Debug.Log(board_piece.Key + " : " + board_piece.Value.name);  
 		}
 
+
+
 		Debug.Log("Opponents Pieces info: "); 
 		foreach(Transform circle_piece in circle_pieces){
 			Debug.Log (circle_piece.name);
-		}
+		}*/
+
+		// Gives visual feedback when debugging the game algorithm
+		int randomInt = Random.Range(0, 9); // Returns int between 0 and 8 
+		Transform test_object = board_pieces[randomInt]; 
+		//Debug.Log ("Name of testObject: " + test_object.name);
+
+		Transform light_object = test_object.GetChild (0);
+		light_object.gameObject.GetComponent<Light>().enabled = true; 
+
 	}
 
 }
