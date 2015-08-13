@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class GameAlgorithm : MonoBehaviour {
 
 	public GameObject board; //Public, because you might want to switch board. 
+	public GameObject vfx; 
 	private ArrayList circle_pieces; 
 	private Dictionary<int, Transform> board_pieces = new Dictionary<int, Transform>(); 
 
@@ -34,7 +35,12 @@ public class GameAlgorithm : MonoBehaviour {
 	 *      
 	 * Algorithm: https://en.wikipedia.org/wiki/Minimax
 	*/
-	
+	void Update(){
+		if(Input.GetKeyDown("space")){
+			vfx.GetComponent<VFX>().disableOrEnable(true);
+		}
+	}
+
 	void Start(){
 		// ASSIGNING AND INITIALIZING VARIABLES
 		Debug.Log("Assigning...");
@@ -55,7 +61,12 @@ public class GameAlgorithm : MonoBehaviour {
 			OpponentChoices[i] = -1; 
 			playerChoices[i] = -1; 
 		}
-		Debug.Log("Player and opponent choice variables has been set."); 
+		Debug.Log("Player and opponent choice variables has been set.");
+
+		// Some visuals
+		vfx = GameObject.Find ("VFX"); 
+		vfx.GetComponent<VFX>().disableOrEnable(false);
+
 		Debug.Log("Assigning of variables done!"); 
 
 		// DEBUGGING INFO: 
@@ -128,6 +139,8 @@ public class GameAlgorithm : MonoBehaviour {
 			if(counter == 3){
 				Debug.Log("Lucky bitch. I'll get you next time."); 
 				// TODO: Make some fancy visuals yo. 
+				//vfx.GetComponent<VFX>().disableOrEnable(true);
+
 			} 
 
 			Debug.Log ("FINAL SCORE IS: " + counter + ", for winCondition at index: " + j); 
@@ -150,5 +163,6 @@ public class GameAlgorithm : MonoBehaviour {
 	public void LightBoardPiece(Transform board_piece){
 		board_piece.GetChild(0).gameObject.GetComponent<Light>().enabled = true; 
 	}
+	
 
 }
