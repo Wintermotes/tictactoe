@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 
 Project("{047D0091-78E3-5DAB-3A82-91528A031349}") = "tictactoe", "Assembly-CSharp.csproj", "{119DDC31-54D8-B282-0ABE-F2051576B58D}"
 EndProject
-Project("{047D0091-78E3-5DAB-3A82-91528A031349}") = "tictactoe", "Assembly-CSharp-Editor.csproj", "{094B0D5D-D0E6-B7E4-1C1C-AC5C44D84E16}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,15 +13,11 @@ Global
 		{119DDC31-54D8-B282-0ABE-F2051576B58D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{119DDC31-54D8-B282-0ABE-F2051576B58D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{119DDC31-54D8-B282-0ABE-F2051576B58D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{094B0D5D-D0E6-B7E4-1C1C-AC5C44D84E16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{094B0D5D-D0E6-B7E4-1C1C-AC5C44D84E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{094B0D5D-D0E6-B7E4-1C1C-AC5C44D84E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{094B0D5D-D0E6-B7E4-1C1C-AC5C44D84E16}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-																							GlobalSection(MonoDevelopProperties) = preSolution
+																																																	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = Assembly-CSharp.csproj
 		Policies = $0
 		$0.TextStylePolicy = $1

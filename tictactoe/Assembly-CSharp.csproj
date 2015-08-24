@@ -46,13 +46,14 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\BoardPiece.cs" />
-     <Compile Include="Assets\Scripts\Dialogue.cs" />
+     <Compile Include="Assets\Scripts\Board.cs" />
      <Compile Include="Assets\Scripts\GameAlgorithm.cs" />
      <Compile Include="Assets\Scripts\MouseLook.cs" />
      <Compile Include="Assets\Scripts\MoveStone.cs" />
-     <Compile Include="Assets\Scripts\OwnCharacterController.cs" />
+     <Compile Include="Assets\Scripts\OpponentPieces.cs" />
      <Compile Include="Assets\Scripts\VFX.cs" />
+     <None Include="Assets\Fonts\Open_Sans\LICENSE.txt" />
+     <None Include="Assets\Fonts\Asul\OFL.txt" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

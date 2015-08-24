@@ -1,168 +1,385 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text; 
 
 public class GameAlgorithm : MonoBehaviour {
 
-	public GameObject board; //Public, because you might want to switch board. 
-	public GameObject vfx; 
-	private ArrayList circle_pieces; 
-	private Dictionary<int, Transform> board_pieces = new Dictionary<int, Transform>(); 
+	private GameObject player; 
+	private GameObject opponent; 
+	private GameObject subtitle;
+	private int key; 
 
-	private int[] playerChoices = new int[3];
-	private int[] OpponentChoices = new int[3];
-	int[,] winners2 = new int[,]
-	{
-		{0,1,2},
-		{3,4,5},
-		{6,7,8},
-		{0,3,6},
-		{1,4,7},
-		{2,5,8},
-		{0,4,8},
-		{2,4,6}
-	};
+	// Dicts of board_fields, player_pieces and opp_pieces
+	public Board game_board; 
+	private List<Transform> inactive_circle_pieces = new List<Transform>();
+	private Dictionary<int, Transform> active_circle_pieces = new Dictionary<int, Transform>(); 
+	private Dictionary<Transform, int> active_cross_pieces = new Dictionary<Transform, int>(); 
+	private Dictionary<Transform, int> board_fields = new Dictionary<Transform, int>(); 
 
+
+	private Transform board_field; 
+	private Transform circle_piece; 
+
+	private List<int> playerChoices = new List<int>();
+	private List<int> opponentChoices = new List<int>();
+	private int player_score; private int opponent_score; 
 
 	
-	/*	 GAME BOARD IS LIKE THIS: 	
-	 * 		
-	 * 		0    |  1   |  2 	
-	 *	    ----------------
-	 *		3    |  4   |  5
-	 *		----------------
-	 *		6    |  7   |  8
-	 *      
-	 * Algorithm: https://en.wikipedia.org/wiki/Minimax
-	*/
-	void Update(){
-		if(Input.GetKeyDown("space")){
-			vfx.GetComponent<VFX>().disableOrEnable(true);
-		}
+	// Lights, vfx, animation and sound
+	private Light sun; 
+	public VFX vfx_script;  
+	private Animator opponentAnimator; 
+
+
+	// UI, debugging And dialogue
+	public List<string> oppMessageList = new List<string>(); 
+	private Text subtitle_text; 
+	private GameObject restartButton; 
+	private StringBuilder builder = new StringBuilder();
+
+	void Awake(){
+		game_board = GetComponent<Board>();  
+		game_board.CreateBoard(); 
 	}
 
 	void Start(){
-		// ASSIGNING AND INITIALIZING VARIABLES
-		Debug.Log("Assigning...");
-		GameObject temp_gameob = GameObject.Find("circle_pieces"); 
-		int counter = 0; 
+		AssignVariables(); 
+	}
+	
+	public void update_game(RaycastHit hit, int person, Transform stone){
+
+		/*------------------------------------------ PLAYER STEP ----------------------------------------- */
+		board_field = FindIndexInBoardfield(hit.transform.name); 
+		LightBoardPiece(board_field); 
+		game_board.UpdateBoard(key, person);
+		board_field.gameObject.layer = 10; // Layer 10 = occupied
+
+		if(person == 1){
+			updatePlayer(active_cross_pieces, stone, key);
+
+			// Transforming stone from raycast
+			Vector3 board_pos = hit.transform.gameObject.transform.position; 
+			board_pos.y += 2.1f; 
+			stone.position = board_pos;
+
+			// For animation, text and other stuff	
+			GameObject temp_gb = GameObject.Find("board_pieces"); 
+			print ("Changing layer on board_pieces!"); 
+			foreach(Transform t in temp_gb.transform){
+				if(t.gameObject.layer == 0){
+					t.gameObject.layer = 2; 
+				}
+			}
+		}
+
+		// Clearing and updating choices at each move! 
+		playerChoices.Clear(); opponentChoices.Clear(); 
+		foreach(int index in active_cross_pieces.Values){
+			playerChoices.Add(index); 
+		}
+
+		foreach(int index in active_circle_pieces.Keys){
+			opponentChoices.Add(index); 
+		}
+
+		// Check for winning condition for the player
+		if(game_board.checkForWin(playerChoices)){
+			player_score++; 
+			GameObject.FindGameObjectWithTag("player_score").GetComponent<Text>().text = "You: " + player_score; 
+		}
+
+		if(player_score == 5) {
+			vfx_script.triggerWin(); 
+		} else {
+		/*------------------------------------------ COMPUTER STEP ----------------------------------------- */
+			StartCoroutine(AnimateComputerTurn(2.0f)); 
+		}
+	}
+
+	public void updatePlayer(Dictionary<Transform, int> active_player_pieces, Transform stone, int board_field_index){
+		if(active_cross_pieces.Count == 3){
+			int previous_stone_index = active_cross_pieces[stone];
+			foreach(KeyValuePair <Transform, int> kvp in board_fields){
+				if(kvp.Value == previous_stone_index){
+					kvp.Key.GetChild(0).gameObject.GetComponent<Light>().enabled = false;
+					kvp.Key.gameObject.layer = 0; 
+				}
+			}
+
+			// For the game algorithm
+			game_board.UpdateBoard(active_cross_pieces[stone], -1);
+			active_cross_pieces.Remove(stone);
+			active_cross_pieces.Add(stone, board_field_index); 
+
+
+		} else {
+			active_cross_pieces.Add(stone, board_field_index); 
+			playerChoices.Add(board_field_index); 
+		}
+
+	}
+
+
+	IEnumerator AnimateComputerTurn(float f) {
+		game_board = GetComponent<Board>();
+		bool usedAllPieces = false; int i; int j; 
+		
+		if(inactive_circle_pieces.Count == 0 && !usedAllPieces){
+			print ("Used all pieces, assigning variable again"); 
+			GameObject temp_gameob = GameObject.Find("circle_pieces"); 
+			foreach(Transform child in temp_gameob.transform){
+				inactive_circle_pieces.Add(child); 
+			}
+			usedAllPieces = true; 
+		} 
+		
+		i = Random.Range(0, inactive_circle_pieces.Count);
+		circle_piece = inactive_circle_pieces[i]; 
+		
+		if(!usedAllPieces){
+			inactive_circle_pieces.RemoveAt(i); // So we use all the pieces first
+		}
+		
+		// Choose boardfield
+		i = game_board.CalculateComputerTurn(opponentChoices)[0]; 
+		j = game_board.CalculateComputerTurn(opponentChoices)[1];
+		
+		// So we only use the pieces on the board
+		if(active_circle_pieces.Count == 3){
+			circle_piece = active_circle_pieces[j]; 
+		} else {
+			active_circle_pieces.Add(i, circle_piece); 
+		}
+		
+		if(j>-1){
+			game_board.UpdateBoard(j, -1); 
+			active_circle_pieces.Add(i, active_circle_pieces[j]); 
+			active_circle_pieces[j].gameObject.layer = 0; 
+			active_circle_pieces.Remove(j); 
+			
+		}
+		
+		board_field = transform.GetChild(i); 
+		board_field.gameObject.layer = 10;
+		
+		// Update the board and choices
+		opponentChoices.Remove(j); 
+		opponentChoices.Add(i); 
+		game_board.UpdateBoard(i, 0);
+
+		// Do visuals
+		opponentAnimator.SetInteger("anim_state", 1);
+		StartCoroutine(vfx_script.FadeLight(sun)); 
+
+		if(game_board.checkForWin(opponentChoices)){
+			opponent_score++; 
+			GameObject.FindGameObjectWithTag("opponent_score").GetComponent<Text>().text = "Opponent: " + opponent_score; 
+			restartButton.SetActive(true); 
+
+			opponentAnimator.SetInteger("anim_state", 3);
+			print(opponentAnimator.GetInteger("anim_state")); 
+			subtitle_text.text = "Your TV: I won! Too bad."; 
+			//vfx_script.triggerLose(); 
+			yield break; 
+		} else {
+			subtitle_text.text = oppMessageList[Random.Range(0, oppMessageList.Count)];
+			StartCoroutine(vfx_script.FadeText(subtitle_text)); 
+			yield return new WaitForSeconds(f);
+		}
+
+
+		// Do some transformations
+		Vector3 destination = board_field.transform.position;
+		destination.y += 15.0f; 
+		circle_piece.transform.position = destination;
+
+		if(opponent_score == 5) {
+			vfx_script.triggerLose(); 
+			print ("Trigger resetgame"); 
+
+		}
+		
+		if(active_cross_pieces.Count == 3){
+			// Integrate sound? 
+			
+			// Make all but active pieces ignore raycast
+			foreach(Transform active_player_piece in active_cross_pieces.Keys){
+				active_player_piece.parent = null; 
+				active_player_piece.gameObject.layer = 0; 
+			}
+			
+			GameObject temp_gb = GameObject.Find("cross_pieces"); 
+			foreach(Transform child in temp_gb.transform){
+				child.GetComponent<MoveStone>().enabled = false; 
+			}
+		}
+		StartCoroutine(vfx_script.FadeLight(sun, true)); 
+		opponentAnimator.SetInteger("anim_state", 0);
+		print ("Done calling AnimateComputerTurn"); 
+		
+	}
+	
+	/*------------------------------------------ GAME ALGORITHM FUNCTIONS ----------------------------------------- */
+
+	public void AssignVariables(){
+		// Boardfields
+		game_board = GetComponent<Board>(); 
+		key = -1; 
+		int counter = 0;
+
 		foreach(Transform child in transform){
-			board_pieces.Add(counter, child); 
+			board_fields.Add(child, counter); 
+			child.gameObject.layer = 2; 
+			counter++; 
+		}
+		
+		// Circle Pieces (i.e the opponent pieces for now)
+		foreach(Transform child in GameObject.Find("circle_pieces").transform){
+			inactive_circle_pieces.Add(child); 
+		}
+		
+		// Visual Effects Object
+		vfx_script = GameObject.Find("VFX").GetComponent<VFX>(); 
+		vfx_script.disableOrEnable(false); 
+		
+		// GUI and Animation
+		subtitle = GameObject.FindGameObjectWithTag("subtitle");
+		subtitle_text = subtitle.GetComponent<Text>(); 
+		
+		opponent = GameObject.FindGameObjectWithTag ("opponent");
+		opponentAnimator = opponent.GetComponent<Animator>();
+		
+		// Lights
+		sun = GameObject.Find("sun").GetComponent<Light>();
+		
+		// Dialogue
+		oppMessageList.Add("Your TV: Do you think this is a game?"); 
+		oppMessageList.Add("Your TV: I see, you got me 'cornered'.");
+		oppMessageList.Add("Your TV: I like you on acid girl.");
+		oppMessageList.Add("Your TV: Why do you even try?");
+		oppMessageList.Add("Your TV: Hmm, let me think..."); 
+		
+		restartButton = GameObject.FindGameObjectWithTag("restart");  
+		restartButton.SetActive(false); 
+	}
+
+	public Transform FindIndexInBoardfield(string name){
+		foreach(Transform field in board_fields.Keys){
+			if (name == field.name){
+				print ("Found a match!"); 
+				key = board_fields[field]; 
+				board_field = field; 
+				break; 
+			}
+		}
+		return board_field; 
+	} 
+
+	public void ResetGameVariables(){
+		game_board.CreateBoard(); 
+		game_board.PrintBoard(); 
+		int counter = 0; 
+
+		// Boardfields and layers
+		board_fields.Clear(); 
+		foreach(Transform child in transform){
+			board_fields.Add(child, counter);
+			child.gameObject.layer = 0; 
+			LightBoardPiece(child, false); 
 			counter++; 
 		}
 
-		circle_pieces = new ArrayList(); 
-		counter = 0; 
-		foreach(Transform child in temp_gameob.transform){
-			circle_pieces.Add(child); 
+		// Player pieces
+		inactive_circle_pieces.Clear();
+
+		active_circle_pieces.Clear(); 
+		active_cross_pieces.Clear();  
+				
+		opponentChoices.Clear();  
+		playerChoices.Clear();  
+
+		// Animation and sound 
+		opponentAnimator.SetInteger("anim_state", 0);
+	}
+
+	/*------------------------------------------ HELPER FUNCTIONS ----------------------------------------- */
+
+	public void resetGame(){ 
+		restartButton.SetActive(false); 
+		ResetGameVariables(); 
+
+		// Transform opponent and player pieces (and set default layers)
+		GameObject boardpiece_botright = GameObject.Find("board_piece_botright"); 
+		GameObject parent = GameObject.Find ("cross_pieces"); 
+
+		Vector3 wanted_position = boardpiece_botright.transform.position; 
+		Vector3 offset = new Vector3(17.0f, 0.0f, 0.0f); 
+		wanted_position += offset; 
+
+		// Transform player pieces
+		foreach(GameObject child in GameObject.FindGameObjectsWithTag("player_piece")){
+			// This should be animated
+			child.gameObject.layer = 0; 
+			child.transform.parent = parent.transform;
+
+			wanted_position.y += 1.4f; 
+			wanted_position.x += Random.Range(-4, 4); 
+			wanted_position.z += Random.Range(-4, 4); 
+
+			child.transform.position = wanted_position;
+			//MovePiece(wanted_position, child.transform);  
+
 		}
 
-		for(int i = 0; i<playerChoices.Length; i++){
-			OpponentChoices[i] = -1; 
-			playerChoices[i] = -1; 
+		// Transform opponent pieces
+		wanted_position = GameObject.Find("board_piece_topleft").transform.position; 
+		offset = new Vector3(-15.0f, 0.0f, 0.0f); 
+		wanted_position += offset; 
+
+		foreach(Transform child in GameObject.Find("circle_pieces").transform){
+			child.transform.position = wanted_position;
+			wanted_position.z += -4.0f; 
 		}
-		Debug.Log("Player and opponent choice variables has been set.");
 
-		// Some visuals
-		vfx = GameObject.Find ("VFX"); 
-		vfx.GetComponent<VFX>().disableOrEnable(false);
+	}
 
-		Debug.Log("Assigning of variables done!"); 
+	public void GameOver(){
+		//print ("Reset game called!"); 
+		//print(Application.loadedLevel);
+		//Application.LoadLevel(Application.loadedLevel);
+	}
 
-		// DEBUGGING INFO: 
-		/*Debug.Log("Board info: "); 
-		foreach(KeyValuePair<int, Transform> board_piece in board_pieces)
+
+	public void LightBoardPiece(Transform board_piece, bool on = true){
+			board_piece.GetChild(0).gameObject.GetComponent<Light>().enabled = on;
+	}
+	
+	
+	
+	private string PrintList(List<int> list){
+		builder.Length = 0; 
+		foreach (int i in list)
 		{
-			Debug.Log(board_piece.Key + " : " + board_piece.Value.name);  
+			builder.Append(i).Append(", ");
 		}
+		string result = builder.ToString();
+		return result; 
+	}
 
+	IEnumerator MovePiece(Vector3 destination, Transform t, float duration = 0.0f){
+		// Duration == time
+		t.position = destination; 
 
-
-		Debug.Log("Opponents Pieces info: "); 
-		foreach(Transform circle_piece in circle_pieces){
-			Debug.Log (circle_piece.name);
-		}*/
-
-		// Gives visual feedback when debugging the game algorithm
-		int randomInt = Random.Range(0, 9); // Returns int between 0 and 8 
-		Transform test_object = board_pieces[randomInt]; 
-		//Debug.Log ("Name of testObject: " + test_object.name);
-
-		Transform light_object = test_object.GetChild (0);
-		//light_object.gameObject.GetComponent<Light>().enabled = true; 
-
-		// Unit testing for a winning condition 
-		playerChoices[0] = 0; 
-		playerChoices[1] = 4; 
-		playerChoices[2] = 8; 
-
-		testAlgorithm(winners2, playerChoices); 
-
+		yield return null; 
 	}
 
 
-
-/*  Function: testAlgorithm
- * 
- *	Tests any given algortihm by brute force, to check if a sequence of three is found. 
- *	 
- *  Input winners: A 2x2 array of win possibilities  
- *  Input playerBoard: Playerboard represented by an integer array
- * 
- */
-	public void testAlgorithm(int[,] winners, int[] playerBoard, bool test = false){
+	
+		
 
 
-		bool match = false; int counter = 0; 
-
-
-		counter = 0; 
-		Debug.Log ("Testing winners"); 
-		Debug.Log ("-----------------------");
-		for(int j = 0; j<winners.GetLength(0);j++) {
-			for(int i = 0; i<playerChoices.Length; i++){
-				Debug.Log ("Player number is: " + playerChoices[i]); 
-				for(int g = 0; g<winners.GetLength(1); g++){	
-				Debug.Log ("Testing against value: " + winners[j, g]); 
-					if(playerChoices[i] == winners[j, g]){
-						Debug.Log ("Matched!"); 
-						match = true; 
-						LightBoardPiece(board_pieces[playerChoices[i]]); 
-					}
-				}
-				if(match){
-					Debug.Log ("I had a match for " + playerChoices[i] + ", so incrementing score!");
-					counter++; 
-				}
-				match = false;
-			}
-			if(counter == 3){
-				Debug.Log("Lucky bitch. I'll get you next time."); 
-				// TODO: Make some fancy visuals yo. 
-				//vfx.GetComponent<VFX>().disableOrEnable(true);
-
-			} 
-
-			Debug.Log ("FINAL SCORE IS: " + counter + ", for winCondition at index: " + j); 
-			Debug.Log ("-----------------------");
-			Debug.Log (winners.GetLength(0)); 
-
-			counter = 0; 
-		}
-
-
-	}
-/* Function LightBoardPiece
- * 
- * Description: Enables a lightsource object, if it is a child of a given transform object. 
- * 
- * Input: Transform object which has a child, which has a ligth as a child. 
- * 
- * 
-*/
-	public void LightBoardPiece(Transform board_piece){
-		board_piece.GetChild(0).gameObject.GetComponent<Light>().enabled = true; 
-	}
 	
 
 }
