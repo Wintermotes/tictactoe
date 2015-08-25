@@ -21,10 +21,9 @@ public class VFX : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		if(Input.GetKeyDown("space")){
-			//StartCoroutine(LowerLight()); 
+
 		}
 	}
-
 	public void disableOrEnable(bool b){
 		gameObject.SetActive(b); 
 	}

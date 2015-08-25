@@ -301,7 +301,7 @@ public class Board : MonoBehaviour
 	/*------------------------------------------ HELPER FUNCTIONS ----------------------------------------- */
 
 	// Purely random approach
-	private int EvaluateMoves(){
+	public int EvaluateMoves(){
 		Dictionary<int, int> possible_moves = generateMoves(); // key  = board_field_value, value = score, 
 		List<int> possible_moves_list = new List<int>();
 		int best_move; 
@@ -310,6 +310,7 @@ public class Board : MonoBehaviour
 		foreach(int key in possible_moves.Keys){
 			possible_moves_list.Add(key); 
 		}
+		print ("There are: " + possible_moves_list.Count + " moves."); 
 		best_move = FindRandomMove(possible_moves_list); 
 		return best_move; 
 	}

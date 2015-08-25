@@ -9,7 +9,8 @@ public class GameAlgorithm : MonoBehaviour {
 	private GameObject player; 
 	private GameObject opponent; 
 	private GameObject subtitle;
-	private int key; 
+	private GameObject tv_screen; 
+	private int key; private int turnsTaken; 
 
 	// Dicts of board_fields, player_pieces and opp_pieces
 	public Board game_board; 
@@ -39,6 +40,11 @@ public class GameAlgorithm : MonoBehaviour {
 	private GameObject restartButton; 
 	private StringBuilder builder = new StringBuilder();
 
+	// Materials 
+	Material[] screensavers; 
+	private List<Material> screensaver_list = new List<Material>();
+
+
 	void Awake(){
 		game_board = GetComponent<Board>();  
 		game_board.CreateBoard(); 
@@ -46,8 +52,23 @@ public class GameAlgorithm : MonoBehaviour {
 
 	void Start(){
 		AssignVariables(); 
+
 	}
-	
+	void Update(){
+		if(Input.GetKeyDown("space")){
+			ChangeTVScreen(); 
+		}
+	}
+
+	public void ChangeTVScreen(){
+		int i = Random.Range(0, 4); 
+		//Material material = screensavers[i];
+		Material material = screensaver_list[i];
+
+		Material[] temp_screensavers = tv_screen.GetComponent<MeshRenderer>().materials;
+		temp_screensavers[3] = material; 
+		tv_screen.GetComponent<MeshRenderer>().materials = temp_screensavers;
+	}
 	public void update_game(RaycastHit hit, int person, Transform stone){
 
 		/*------------------------------------------ PLAYER STEP ----------------------------------------- */
@@ -88,6 +109,18 @@ public class GameAlgorithm : MonoBehaviour {
 		if(game_board.checkForWin(playerChoices)){
 			player_score++; 
 			GameObject.FindGameObjectWithTag("player_score").GetComponent<Text>().text = "You: " + player_score; 
+			ChangeTVScreen(); 
+			restartButton.SetActive(true); 
+			restartButton.transform.GetChild(0).GetComponent<Text>().text = "You won! Click here to grab another round"; 
+			
+			opponentAnimator.SetInteger("anim_state", 3);
+			print(opponentAnimator.GetInteger("anim_state")); 
+			subtitle_text.text = "Your TV: I lost! Go to hell."; 
+			game_board.PrintBoard(); 
+			//vfx_script.triggerLose(); 
+			turnsTaken = 0; 
+			return;
+			 
 		}
 
 		if(player_score == 5) {
@@ -143,12 +176,27 @@ public class GameAlgorithm : MonoBehaviour {
 		}
 		
 		// Choose boardfield
-		i = game_board.CalculateComputerTurn(opponentChoices)[0]; 
+		if(turnsTaken > 5){
+			print ("Turns taken great than 5"); 
+			i = game_board.EvaluateMoves(); 
+			print ("i: " + i); 
+		} else {
+			i = game_board.CalculateComputerTurn(opponentChoices)[0]; 
+			turnsTaken++; 
+		}
+
+
+		// j = best piece to move 
 		j = game_board.CalculateComputerTurn(opponentChoices)[1];
 		
-		// So we only use the pieces on the board
+		// When we have 3 pieces on the board
 		if(active_circle_pieces.Count == 3){
 			circle_piece = active_circle_pieces[j]; 
+			foreach(KeyValuePair <Transform, int> kvp in board_fields){
+				if(kvp.Value == j){
+					kvp.Key.gameObject.layer = 0; 
+				}
+			}
 		} else {
 			active_circle_pieces.Add(i, circle_piece); 
 		}
@@ -175,13 +223,16 @@ public class GameAlgorithm : MonoBehaviour {
 
 		if(game_board.checkForWin(opponentChoices)){
 			opponent_score++; 
+			ChangeTVScreen(); 
 			GameObject.FindGameObjectWithTag("opponent_score").GetComponent<Text>().text = "Opponent: " + opponent_score; 
 			restartButton.SetActive(true); 
 
 			opponentAnimator.SetInteger("anim_state", 3);
 			print(opponentAnimator.GetInteger("anim_state")); 
 			subtitle_text.text = "Your TV: I won! Too bad."; 
+			game_board.PrintBoard(); 
 			//vfx_script.triggerLose(); 
+			turnsTaken = 0; 
 			yield break; 
 		} else {
 			subtitle_text.text = oppMessageList[Random.Range(0, oppMessageList.Count)];
@@ -253,7 +304,17 @@ public class GameAlgorithm : MonoBehaviour {
 		
 		// Lights
 		sun = GameObject.Find("sun").GetComponent<Light>();
-		
+
+		// Materials 
+		tv_screen = GameObject.FindGameObjectWithTag("tv_screen"); 
+		for(int i = 1; i<5; i++){
+			string s = "tv_screensaver_" + i.ToString(); 
+			//print ("String: " + s); 
+			Material screensaver = Resources.Load(s, typeof(Material)) as Material;
+			screensaver_list.Add(screensaver); 
+			//print (screensaver.name); 
+		}
+
 		// Dialogue
 		oppMessageList.Add("Your TV: Do you think this is a game?"); 
 		oppMessageList.Add("Your TV: I see, you got me 'cornered'.");
@@ -309,7 +370,7 @@ public class GameAlgorithm : MonoBehaviour {
 	public void resetGame(){ 
 		restartButton.SetActive(false); 
 		ResetGameVariables(); 
-
+		ChangeTVScreen(); 
 		// Transform opponent and player pieces (and set default layers)
 		GameObject boardpiece_botright = GameObject.Find("board_piece_botright"); 
 		GameObject parent = GameObject.Find ("cross_pieces"); 
@@ -342,6 +403,8 @@ public class GameAlgorithm : MonoBehaviour {
 			child.transform.position = wanted_position;
 			wanted_position.z += -4.0f; 
 		}
+
+
 
 	}
 

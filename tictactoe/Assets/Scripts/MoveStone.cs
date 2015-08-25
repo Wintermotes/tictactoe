@@ -25,7 +25,7 @@ public class MoveStone : MonoBehaviour {
 
 			//print ("Moving stone"); 
 			mousePos = Input.mousePosition; 
-			wantedPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 10.0f));
+			wantedPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 20.0f));
 			transform.position = wantedPos; 
 
 			if(waitForTime){
@@ -35,6 +35,7 @@ public class MoveStone : MonoBehaviour {
 		}
 
 		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
 		RaycastHit hit;
 		// Only perform transform, if its on a board_piece, you carry a stone, and press the mouse. 
 		if (Physics.Raycast(ray, out hit) && carry && Input.GetMouseButtonDown(0) && hit.transform.gameObject.tag == "board_piece" && hit.transform.gameObject.layer == 0){
