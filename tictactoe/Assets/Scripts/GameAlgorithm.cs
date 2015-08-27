@@ -36,7 +36,7 @@ public class GameAlgorithm : MonoBehaviour {
 
 	// UI, debugging And dialogue
 	public List<string> oppMessageList = new List<string>(); 
-	private Text subtitle_text; 
+	private Text subtitle_text; private bool sayOnce; 
 	private GameObject restartButton; 
 	private StringBuilder builder = new StringBuilder();
 
@@ -60,15 +60,7 @@ public class GameAlgorithm : MonoBehaviour {
 		}
 	}
 
-	public void ChangeTVScreen(){
-		int i = Random.Range(0, 4); 
-		//Material material = screensavers[i];
-		Material material = screensaver_list[i];
 
-		Material[] temp_screensavers = tv_screen.GetComponent<MeshRenderer>().materials;
-		temp_screensavers[3] = material; 
-		tv_screen.GetComponent<MeshRenderer>().materials = temp_screensavers;
-	}
 	public void update_game(RaycastHit hit, int person, Transform stone){
 
 		/*------------------------------------------ PLAYER STEP ----------------------------------------- */
@@ -133,6 +125,7 @@ public class GameAlgorithm : MonoBehaviour {
 
 	public void updatePlayer(Dictionary<Transform, int> active_player_pieces, Transform stone, int board_field_index){
 		if(active_cross_pieces.Count == 3){
+			print ("Update player: Three pieces is on the board"); 
 			int previous_stone_index = active_cross_pieces[stone];
 			foreach(KeyValuePair <Transform, int> kvp in board_fields){
 				if(kvp.Value == previous_stone_index){
@@ -158,7 +151,8 @@ public class GameAlgorithm : MonoBehaviour {
 	IEnumerator AnimateComputerTurn(float f) {
 		game_board = GetComponent<Board>();
 		bool usedAllPieces = false; int i; int j; 
-		
+
+		/*
 		if(inactive_circle_pieces.Count == 0 && !usedAllPieces){
 			print ("Used all pieces, assigning variable again"); 
 			GameObject temp_gameob = GameObject.Find("circle_pieces"); 
@@ -166,7 +160,22 @@ public class GameAlgorithm : MonoBehaviour {
 				inactive_circle_pieces.Add(child); 
 			}
 			usedAllPieces = true; 
-		} 
+		} */
+
+		if(active_cross_pieces.Count == 3){
+			// Integrate sound? 
+			print ("Now you cannot add more pieces to the board"); 
+			// Make all but active pieces ignore raycast
+			foreach(Transform active_player_piece in active_cross_pieces.Keys){
+				active_player_piece.parent = null; 
+				active_player_piece.gameObject.layer = 0; 
+			}
+			
+			GameObject temp_gb = GameObject.Find("cross_pieces"); 
+			foreach(Transform child in temp_gb.transform){
+				child.GetComponent<MoveStone>().enabled = false; 
+			}
+		}
 		
 		i = Random.Range(0, inactive_circle_pieces.Count);
 		circle_piece = inactive_circle_pieces[i]; 
@@ -191,6 +200,7 @@ public class GameAlgorithm : MonoBehaviour {
 		
 		// When we have 3 pieces on the board
 		if(active_circle_pieces.Count == 3){
+			print ("Computer has three pieces on the board"); 
 			circle_piece = active_circle_pieces[j]; 
 			foreach(KeyValuePair <Transform, int> kvp in board_fields){
 				if(kvp.Value == j){
@@ -222,29 +232,57 @@ public class GameAlgorithm : MonoBehaviour {
 		StartCoroutine(vfx_script.FadeLight(sun)); 
 
 		if(game_board.checkForWin(opponentChoices)){
-			opponent_score++; 
+
+			// Animation and materials
+			opponentAnimator.SetInteger("anim_state", 3);
 			ChangeTVScreen(); 
+
+			// Text
 			GameObject.FindGameObjectWithTag("opponent_score").GetComponent<Text>().text = "Opponent: " + opponent_score; 
 			restartButton.SetActive(true); 
+			subtitle_text.text = "Your tv: Now what's this...?"; 
+			StartCoroutine(vfx_script.FadeText(subtitle_text, 3.0f)); 
 
-			opponentAnimator.SetInteger("anim_state", 3);
-			print(opponentAnimator.GetInteger("anim_state")); 
-			subtitle_text.text = "Your TV: I won! Too bad."; 
+			PlayerInteraction(false); 
+			yield return new WaitForSeconds(2.5f);
+			subtitle_text.text = "Your tv: Hah! Three Fin a row!"; 
+			StartCoroutine(vfx_script.FadeText(subtitle_text)); 
+			PlayerInteraction(true); 
+
+			// Transform piece: 
+			Vector3 destination = board_field.transform.position;
+			destination.y += 15.0f; 
+			circle_piece.transform.position = destination;
+
+
+
+			// Debugging: 
 			game_board.PrintBoard(); 
-			//vfx_script.triggerLose(); 
 			turnsTaken = 0; 
+			opponent_score++; 
+
 			yield break; 
 		} else {
-			subtitle_text.text = oppMessageList[Random.Range(0, oppMessageList.Count)];
-			StartCoroutine(vfx_script.FadeText(subtitle_text)); 
+			// Text
+			if(active_circle_pieces.Count == 3 && !sayOnce){
+				subtitle_text.text = "Now the real game begins. You can't add more pieces to the board";
+				StartCoroutine(vfx_script.FadeText(subtitle_text)); 
+				sayOnce = true; 
+			} else {
+				subtitle_text.text = oppMessageList[Random.Range(0, oppMessageList.Count)];
+				StartCoroutine(vfx_script.FadeText(subtitle_text)); 
+			}
+
+			// Do some transformations
+			Vector3 destination = board_field.transform.position;
+			destination.y += 15.0f; 
+			circle_piece.transform.position = destination;
+
 			yield return new WaitForSeconds(f);
 		}
 
 
-		// Do some transformations
-		Vector3 destination = board_field.transform.position;
-		destination.y += 15.0f; 
-		circle_piece.transform.position = destination;
+
 
 		if(opponent_score == 5) {
 			vfx_script.triggerLose(); 
@@ -252,20 +290,7 @@ public class GameAlgorithm : MonoBehaviour {
 
 		}
 		
-		if(active_cross_pieces.Count == 3){
-			// Integrate sound? 
-			
-			// Make all but active pieces ignore raycast
-			foreach(Transform active_player_piece in active_cross_pieces.Keys){
-				active_player_piece.parent = null; 
-				active_player_piece.gameObject.layer = 0; 
-			}
-			
-			GameObject temp_gb = GameObject.Find("cross_pieces"); 
-			foreach(Transform child in temp_gb.transform){
-				child.GetComponent<MoveStone>().enabled = false; 
-			}
-		}
+
 		StartCoroutine(vfx_script.FadeLight(sun, true)); 
 		opponentAnimator.SetInteger("anim_state", 0);
 		print ("Done calling AnimateComputerTurn"); 
@@ -321,7 +346,8 @@ public class GameAlgorithm : MonoBehaviour {
 		oppMessageList.Add("Your TV: I like you on acid girl.");
 		oppMessageList.Add("Your TV: Why do you even try?");
 		oppMessageList.Add("Your TV: Hmm, let me think..."); 
-		
+		sayOnce = false; 
+
 		restartButton = GameObject.FindGameObjectWithTag("restart");  
 		restartButton.SetActive(false); 
 	}
@@ -329,7 +355,6 @@ public class GameAlgorithm : MonoBehaviour {
 	public Transform FindIndexInBoardfield(string name){
 		foreach(Transform field in board_fields.Keys){
 			if (name == field.name){
-				print ("Found a match!"); 
 				key = board_fields[field]; 
 				board_field = field; 
 				break; 
@@ -363,6 +388,21 @@ public class GameAlgorithm : MonoBehaviour {
 
 		// Animation and sound 
 		opponentAnimator.SetInteger("anim_state", 0);
+	}
+	/*------------------------------------------ VISUAL, PLAYER CONTROLLER AND CAMERA FUNCTIONS ----------------------------------------- */
+	public void ChangeTVScreen(){
+		int i = Random.Range(0, 4); 
+		Material material = screensaver_list[i];
+		
+		Material[] temp_screensavers = tv_screen.GetComponent<MeshRenderer>().materials;
+		temp_screensavers[3] = material; 
+		tv_screen.GetComponent<MeshRenderer>().materials = temp_screensavers;
+	}
+
+	public void PlayerInteraction(bool b){
+		foreach(Transform t in active_cross_pieces.Keys){
+			t.gameObject.GetComponent<MoveStone>().enabled = b; 
+		}
 	}
 
 	/*------------------------------------------ HELPER FUNCTIONS ----------------------------------------- */

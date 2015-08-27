@@ -53,13 +53,11 @@ public class MoveStone : MonoBehaviour {
 			carry = !carry;
 		
 			game = GameObject.FindGameObjectWithTag("game_algorithm").GetComponent<GameAlgorithm>(); 
-			string name = "Cube: "; 
 			if(gameObject.tag == "opponent_piece"){
 				game.update_game(hit, 0, gameObject.transform); 
 			} 
 			else if(gameObject.tag == "player_piece")
 			{
-				print (gameObject.tag); 
 				game.update_game(hit, 1, gameObject.transform); 
 			} else {
 				print("The gameobject tag is: " + gameObject.tag); 

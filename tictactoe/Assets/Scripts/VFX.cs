@@ -51,7 +51,6 @@ public class VFX : MonoBehaviour {
 	}
 
 	public IEnumerator FadeLight(Light lightComponent, bool fadeOut = false){
-		print ("Calling lowerLight"); 
 		float time = 0.0f;  
 
 		if(!fadeOut){
@@ -70,12 +69,11 @@ public class VFX : MonoBehaviour {
 	}
 	
 
-	public IEnumerator FadeText(Text textComponent, bool fadeIn = false){
-		print ("Calling Fadetext"); 
+	public IEnumerator FadeText(Text textComponent, float seconds = 2.0f){
 		float time = 0.0f; 
 		Color c = new Color(0.0f, 0.0f, 0.0f, 1.0f); 
 
-		yield return new WaitForSeconds(2.0f); 
+		yield return new WaitForSeconds(seconds); 
 		while (time < fadeTime && textComponent.color.a > 0.0f){
 			time+=Time.deltaTime;
 			c.a += -0.01f; 

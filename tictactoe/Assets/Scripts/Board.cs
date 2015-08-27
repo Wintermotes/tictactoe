@@ -54,11 +54,9 @@ public class Board : MonoBehaviour
 
 	public bool checkForWin(List<int> choices, bool test = false){
 		if(choices.Count < 3){
-			print ("No need to go on, you havent placed 3 pieces yet"); 
 			return false; 
 		} else {
 			// Check for winners
-			print ("Checking for win..."); 
 			bool match = false; int counter = 0; 
 
 			for(int j = 0; j<winners.GetLength(0);j++) {
