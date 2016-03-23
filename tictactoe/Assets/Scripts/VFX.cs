@@ -24,8 +24,11 @@ public class VFX : MonoBehaviour {
 
 		}
 	}
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> b5436829e9413476f7cf662121799f06d4a231a8
 	public void disableOrEnable(bool b){
 		gameObject.SetActive(b); 
 	}
@@ -47,7 +50,11 @@ public class VFX : MonoBehaviour {
 		// Trigger visible button
 	}
 
+<<<<<<< HEAD
 	public void triggerVictory(){
+=======
+	public void triggerWin(){
+>>>>>>> b5436829e9413476f7cf662121799f06d4a231a8
 		disableOrEnable(true); 
 		//print ("You won!"); 
 	}
@@ -71,7 +78,11 @@ public class VFX : MonoBehaviour {
 	}
 	
 
+<<<<<<< HEAD
 	public IEnumerator FadeText(Text textComponent, float seconds = 6.0f){
+=======
+	public IEnumerator FadeText(Text textComponent, float seconds = 2.0f){
+>>>>>>> b5436829e9413476f7cf662121799f06d4a231a8
 		float time = 0.0f; 
 		Color c = new Color(0.0f, 0.0f, 0.0f, 1.0f); 
 
